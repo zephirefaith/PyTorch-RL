@@ -4,6 +4,7 @@ import os
 import sys
 import pickle
 import time
+import math
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils import *
@@ -19,7 +20,7 @@ Tensor = DoubleTensor
 torch.set_default_tensor_type('torch.DoubleTensor')
 
 parser = argparse.ArgumentParser(description='PyTorch PPO example')
-parser.add_argument('--env-name', default="Reacher-v1", metavar='G',
+parser.add_argument('--env-name', default="CartPole-v1", metavar='G',
                     help='name of the environment to run')
 parser.add_argument('--model-path', metavar='G',
                     help='path of pre-trained model')
@@ -74,9 +75,9 @@ running_state = ZFilter((state_dim,), clip=5)
 """define actor and critic"""
 if args.model_path is None:
     if is_disc_action:
-        policy_net = DiscretePolicy(state_dim, env_dummy.action_space.n)
+        policy_net = DiscretePolicy(state_dim, env_dummy.action_space.n, hidden_size=(20,20))
     else:
-        policy_net = Policy(state_dim, env_dummy.action_space.shape[0], log_std=args.log_std)
+        policy_net = Policy(state_dim, env_dummy.action_space.shape[0], log_std=args.log_std, hidden_size=(20,20))
     value_net = Value(state_dim)
 else:
     policy_net, value_net, running_state = pickle.load(open(args.model_path, "rb"))
@@ -90,7 +91,7 @@ optimizer_value = torch.optim.Adam(value_net.parameters(), lr=args.learning_rate
 
 # optimization epoch number and batch size for PPO
 optim_epochs = 5
-optim_batch_size = 4096
+optim_batch_size = 64
 
 """create agent"""
 agent = Agent(env_factory, policy_net, running_state=running_state, render=args.render, num_threads=args.num_threads)
@@ -114,9 +115,10 @@ def update_params(batch, i_iter):
     """perform mini-batch PPO update"""
     optim_iter_num = int(math.ceil(states.shape[0] / optim_batch_size))
     for _ in range(optim_epochs):
-        perm = np.arange(states.shape[0])
-        np.random.shuffle(perm)
-        perm = LongTensor(perm).cuda() if use_gpu else LongTensor(perm)
+        perm = torch.randperm(states.shape[0])
+        # perm = np.arange(states.shape[0])
+        # np.random.shuffle(perm)
+        # perm = LongTensor(perm).cuda() if use_gpu else LongTensor(perm)
 
         states, actions, returns, advantages, fixed_log_probs = \
             states[perm], actions[perm], returns[perm], advantages[perm], fixed_log_probs[perm]
@@ -151,7 +153,8 @@ def main_loop():
                 policy_net.cuda(), value_net.cuda()
 
         """clean up gpu memory"""
-        torch.cuda.empty_cache()
+        if use_gpu:
+            torch.cuda.empty_cache()
 
 
 main_loop()

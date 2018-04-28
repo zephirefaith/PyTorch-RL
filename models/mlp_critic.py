@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Value(nn.Module):
     def __init__(self, state_dim, hidden_size=(128, 128), activation='tanh'):
-        super().__init__()
+        super(Value, self).__init__()
         if activation == 'tanh':
             self.activation = F.tanh
         elif activation == 'relu':
