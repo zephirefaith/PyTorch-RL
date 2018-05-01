@@ -20,7 +20,7 @@ Tensor = DoubleTensor
 torch.set_default_tensor_type('torch.DoubleTensor')
 
 parser = argparse.ArgumentParser(description='PyTorch PPO example')
-parser.add_argument('--env-name', default="CartPole-v1", metavar='G',
+parser.add_argument('--env-name', default="InvertedPendulum-v2", metavar='G',
                     help='name of the environment to run')
 parser.add_argument('--model-path', metavar='G',
                     help='path of pre-trained model')
@@ -77,7 +77,7 @@ if args.model_path is None:
     if is_disc_action:
         policy_net = DiscretePolicy(state_dim, env_dummy.action_space.n, hidden_size=(20,20))
     else:
-        policy_net = Policy(state_dim, env_dummy.action_space.shape[0], log_std=args.log_std, hidden_size=(20,20))
+        policy_net = Policy(state_dim, env_dummy.action_space.shape[0], log_std=args.log_std, hidden_size=(3,3))
     value_net = Value(state_dim)
 else:
     policy_net, value_net, running_state = pickle.load(open(args.model_path, "rb"))
